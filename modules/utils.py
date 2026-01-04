@@ -45,7 +45,7 @@ def calculate_fetal_snr(S5, fQRS, fs):
     Estimate the fetal SNR by comparing the energy of the fQRS with the energy of the noise 
     in the intervals between peaks.
     """
-    # 1. Definizione delle finestre
+    # Define windows
     qrs_window_ms = 100  
     noise_window_ms = 200 
     
@@ -167,7 +167,6 @@ def plot_check_zoom(S3,S4, fs_up, fs):
     plt.title("Upsampling - Correct Zoom Check")
     return plt.show()
 
-
 def all_channel_shape(S4):
     c = 0
     plt.figure(figsize=(24,6))
@@ -177,7 +176,6 @@ def all_channel_shape(S4):
     plt.title("All channels stacked")
     return plt.show()
  
-
 def plot_template_m(maternal_template_clean):
     plt.figure(figsize=(8,4))
     plt.plot(maternal_template_clean, color=colors[1])
@@ -189,7 +187,7 @@ def plot_template_m(maternal_template_clean):
 def plot_hrf(fQRS, fs_up, HR, string):
     time_vector_seconds = fQRS[1:] / fs_up
 
-    plt.figure(figsize=(10, 4))
+    plt.figure(figsize=(16, 4))
     plt.plot(time_vector_seconds, HR, marker='o', color='orange')
     plt.axhline(np.mean(HR), label="Mean HR", color='red')
     plt.title(f"{string} Heart Rate")
@@ -224,8 +222,6 @@ def check_variance_reduction(S_original, S_cancelled):
     var_canc = np.var(S_cancelled)
     reduction = (1 - var_canc / var_orig) * 100
     print(f"Total Variance Reduced: {reduction:.2f}%")
-
-
 
 def plot_spectral_density_power(S4_pre,fs_up,S5):
     def plot_spectral_density(X, fs, label, color):
@@ -306,7 +302,6 @@ def plot_medium_S6(PC1_f, clean_fQRS, fs_up):
             S6_pc = np.zeros(2 * win)
         return S6_pc, Nav
 
-
     S6_pc, Nav_used = calculate_average_fecg_from_pc(PC1_f, clean_fQRS, fs_up)
     peak_index = np.argmax(np.abs(S6_pc))
 
@@ -323,109 +318,6 @@ def plot_medium_S6(PC1_f, clean_fQRS, fs_up):
 
     return plt.show()
 
-
-def FECG_meanComplex(S5, clean_fQRS, fs_up, win_ms=100):
-    win = int((win_ms/1000) * fs_up)
-    S6 = np.zeros((2*win, S5.shape[1]))
-    results = {}
-    
-    # Ensure the list of indices used for slicing is treated as integers
-    qrs_indices_to_use = np.array(clean_fQRS[:min(len(clean_fQRS), 150)], dtype=int)
-
-    for ch in range(S5.shape[1]):
-        segments = []
-
-        for q in qrs_indices_to_use:
-            
-            # Check bounds using integer q
-            if q - win >= 0 and q + win < len(S5):
-                
-                # Slicing is now safe because q is guaranteed to be an integer
-                seg = S5[q - win : q + win, ch]
-                segments.append(seg)
-               
-                
-        if len(segments) > 0:
-            S6[:, ch] = np.mean(segments, axis=0)
-            comp = S6[:, ch]
-        else:
-        
-            results[f"Canale_{ch+1}"] = {"Amplitudine_PP_uV": 0.0, "Durata_QRS_ms": 0.0}
-            continue 
-
-        amp_max = np.max(comp)
-        amp_min = np.min(comp)
-        amp_pp = amp_max - amp_min
-
-        idx_R = np.argmax(np.abs(comp))
-        thr_dur = amp_pp * 0.1 
-        
-        start_qrs = 0
-        for i in range(idx_R, 0, -1):
-            if np.abs(comp[i]) < thr_dur:
-                start_qrs = i
-                break
-        
-        end_qrs = len(comp) - 1
-        for i in range(idx_R, len(comp)):
-            if np.abs(comp[i]) < thr_dur:
-                end_qrs = i
-                break
-
-        dur_qrs_ms = (end_qrs - start_qrs) / fs_up * 1000
-        
-        results[f"Canale_{ch+1}"] = {
-            "Amplitudine_PP_uV": round(amp_pp, 2),
-            "Durata_QRS_ms": round(dur_qrs_ms, 2)
-        }
-    
-    return S6, results
-
-
-def plot_true_vs_detected_complex(S6_real, S6_detected):
-    """
-    Compares the average fetal ECG complex derived from true QRS indices 
-    against the complex derived from detected QRS indices.
-
-    Args:
-        S6_real (np.array): The average complex derived using True fQRS indices.
-        S6_detected (np.array): The average complex derived using Detected fQRS indices.
-    """
-    
-    num_channels = S6_real.shape[1]
-    
-    plt.figure(figsize=(10, 4 * num_channels))
-    
-    for ch in range(num_channels):
-        
-        plt.subplot(num_channels, 1, ch + 1)
-        
-        # 1. Plot the TRUE complex (The Gold Standard Shape)
-        plt.plot(S6_real[:, ch], 
-                 label=f'AECG {ch+1}: TRUE (Gold Standard)', 
-                 color=colors[1], 
-                 linewidth=2)
-                 
-        # 2. Plot the DETECTED complex (Your Algorithm's Shape)
-        plt.plot(S6_detected[:, ch], 
-                 label=f'AECG {ch+1}: DETECTED (Algorithm Output)', 
-                 color=colors[5], 
-                 linestyle='--', 
-                 linewidth=1.5)
-        
-        amp_real = np.max(S6_real[:, ch]) - np.min(S6_real[:, ch])
-        amp_det = np.max(S6_detected[:, ch]) - np.min(S6_detected[:, ch])
-        
-        plt.title(f'AECG{ch+1}: True vs. Detected Average fECG Complex')
-        plt.xlabel('Samples')
-        plt.ylabel('Amplitude [uV]')
-        plt.legend(loc='upper right')
-        plt.grid(True)
-        
-    plt.tight_layout()
-    plt.show()
-
-
 def plot_qrs_comparison(ecg_signal, true_qrs, detected_qrs, fs):
     
     ecg_signal = np.array(ecg_signal)
@@ -434,14 +326,10 @@ def plot_qrs_comparison(ecg_signal, true_qrs, detected_qrs, fs):
 
 
     time_axis = np.arange(len(ecg_signal)) / fs
-
-
-    
+   
     plt.figure(figsize=(24, 6))
-    
 
     plt.plot(time_axis, ecg_signal, label='Signal ECG (Fetal)', color=colors[5], linewidth=1)
-    
 
     plt.plot(
         time_axis[true_qrs], 
@@ -468,9 +356,6 @@ def plot_qrs_comparison(ecg_signal, true_qrs, detected_qrs, fs):
     plt.grid(True, linestyle='--', alpha=0.6)
     plt.tight_layout()
     plt.show()
-
-
-
 
 def plot_qrs_zoom(ecg_signal, true_qrs, detected_qrs, fs, start_time_sec, duration_sec):
     

@@ -81,32 +81,11 @@ def c_mean_bpm(true_qrs_indices, fs):
     
     return median_bpm
 
-def calculate_snr_sir(s4, s5, s6):
- 
-    eps = 1e-10
-    def power(x):
-        return np.mean(x**2, axis=0)
-    
-    P_F = power(s6)
-    mecg_est = s4 - s5
-    P_M = power(mecg_est)
-    noise_est = s5 - s6
-    P_N = power(noise_est)
-    
-    snr_linear = P_F / (P_N + eps)
-    sir_linear = P_F / (P_M + eps)
-    
-    snr_db = 10 * np.log10(snr_linear)
-    sir_db = 10 * np.log10(sir_linear)
-    
-    return np.mean(snr_db), np.mean(sir_db)
-
 def compute_FHR(fQRS, fs_up):
     fQRS = np.array(fQRS)
     RR = np.diff(fQRS) / fs_up  # sec
     FHR = 60 / RR               # bpm
     return FHR
-
 
 def mean_metrics(df):
     metrics_for_mean = ['reliability', 'mean_bpm_f','mean_real_bpm_f', 'sir_gain_dB', 'fSNR_dB','SIR','SNR', 'SE', 'PPV', 'F1', 'ACC', 'TP', 'FP', 'FN']
@@ -220,36 +199,6 @@ def plot_all_metrics_groups(df, metrics):
     plt.show()
 
 
-
-def scatter_plot_F1(df):
-    plt.figure(figsize=(8, 6))
- 
-    scatter = plt.scatter(df['fSNR_dB'], df['F1'], c=df['isSuccess'], cmap='RdYlGn', alpha=0.7) 
-
-    plt.title('F1-Score vs. Fetal SNR (fSNR_dB)')
-    plt.xlabel('Fetal SNR (dB)')
-    plt.ylabel('F1-Score')
-    plt.grid(True, linestyle='--', alpha=0.6)
-
-    
-    legend1 = plt.legend(*scatter.legend_elements(), 
-                         title="Success", 
-                         labels=['FAIL (False)', 'SUCCESS (True)'])
-    plt.gca().add_artist(legend1)
-    plt.show()
-
-
-def plot_distribution(df):
-    plt.figure(figsize=(8, 5))
-    plt.hist(df['F1'], bins=10, edgecolor='black', color='skyblue')
-    plt.title('Distribution of F1-Score')
-    plt.xlabel('F1-Score')
-    plt.ylabel('Frequency')
-    plt.grid(axis='y', linestyle='--', alpha=0.7)
-    plt.show()
- 
-
-
 def plot_success_vs_fail_metrics(df):
 
     metrics_for_plot = ['F1', 'SE', 'PPV', 'sir_gain_dB', 'fSNR_dB', 'TP', 'FP', 'FN']
@@ -326,7 +275,7 @@ def plot_success_vs_fail_metrics(df):
     autolabel(rects6, ax)
     
     plt.suptitle("Statistical Analysis:Comparison Mean Performance for Success", fontsize=16)
-    plt.tight_layout(rect=[0, 0.03, 1, 0.95]) # Regola layout per titolo principale
+    plt.tight_layout(rect=[0, 0.03, 1, 0.95]) 
     plt.show()
 
 def plot_reliability_vs_snr_sir(df):
@@ -418,3 +367,60 @@ def plot_success_fail_means(df):
 
     print("SUCCESS means:\n", df_succ[metrics].mean())
     print("\nFAIL means:\n", df_fail[metrics].mean())
+
+def plot_ica_reliability_vs_snr_sir(df):
+    import numpy as np
+    import matplotlib.pyplot as plt
+
+    plt.figure(figsize=(12,5))
+
+    # SNR
+    ax1 = plt.subplot(1,2,1)
+
+    x = df["SNR"].values
+    y = df["ica_rel"].fillna(0).values * 100  
+
+    ax1.scatter(x, y, c="coral", edgecolor="black")
+
+    mask = np.isfinite(x) & np.isfinite(y)
+    x_clean = x[mask]
+    y_clean = y[mask]
+
+    if len(np.unique(x_clean)) >= 2:
+        coeff = np.polyfit(x_clean, y_clean, deg=1)
+        poly = np.poly1d(coeff)
+        x_line = np.linspace(min(x_clean), max(x_clean), 200)
+        ax1.plot(x_line, poly(x_line), "--", color="black", linewidth=2)
+
+    ax1.set_xlabel("SNR [dB]")
+    ax1.set_ylabel("ICA Reliability [%]")
+    ax1.set_title("ICA Reliability vs SNR")
+    ax1.set_ylim(0, 100)
+    ax1.grid(alpha=0.4)
+
+    # SIR
+    ax2 = plt.subplot(1,2,2)
+
+    x = df["SIR"].values
+    y = df["ica_rel"].fillna(0).values * 100
+
+    ax2.scatter(x, y, c="coral", edgecolor="black")
+
+    mask = np.isfinite(x) & np.isfinite(y)
+    x_clean = x[mask]
+    y_clean = y[mask]
+
+    if len(np.unique(x_clean)) >= 2:
+        coeff = np.polyfit(x_clean, y_clean, deg=1)
+        poly = np.poly1d(coeff)
+        x_line = np.linspace(min(x_clean), max(x_clean), 200)
+        ax2.plot(x_line, poly(x_line), "--", color="black", linewidth=2)
+
+    ax2.set_xlabel("SIR [dB]")
+    ax2.set_ylabel("ICA Reliability [%]")
+    ax2.set_title("ICA Reliability vs SIR")
+    ax2.set_ylim(0, 100)
+    ax2.grid(alpha=0.4)
+
+    plt.tight_layout()
+    plt.show()
