@@ -45,7 +45,7 @@ In **modules:**
 In **result:**
 
 - **`A_RESULT.csv`**: This file contains the performance metrics computed for the model-based pipeline proposed in the paper. The reported metrics quantify fetal QRS detection $\text{SNR}$, $\text{SIR}$, $\text{Reliability}$, $\text{F1}$, $\text{ACC}$, $\text{SE}$, $\text{PPV}$ (created by validation.ipynb);
-- **`comparison.csv`**: This file extends the analysis by including the same performance metrics computed for a FastICA-based approach, enabling a direct comparison with the proposed pipeline. In adding there are $\text{ica\_best\_comp}$, $\text{ica\_qrs}$, $\text{ica\_mean\_fhr}$, $\text{ica\_rel}$, $\text{ica\_mae}$, $\text{ica\_rmse}$, $\text{ica\_rel\_dist}$ (created by validation_ICA.ipynb).
+- **`comparison.csv`**: This file extends the analysis by including the same performance metrics computed for a FastICA-based approach, enabling a direct comparison with the proposed pipeline. In adding there are $\text{icabestcomp}$, $\text{icaqrs}$, $\text{icameanfhr}$, $\text{icarel}$, $\text{icamae}$, $\text{icarmse}$, $\text{icareldist}$ (created by validation_ICA.ipynb).
 
 ---
 
